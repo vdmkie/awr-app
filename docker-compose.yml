@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: awr
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/awr
+      SECRET_KEY: supersecret
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      SUPERGROUP_CHAT_ID: ${SUPERGROUP_CHAT_ID:-}
+    depends_on: [db]
+    ports: ["8000:8000"]
+
+  web:
+    build: ./apps/web
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    ports: ["5173:80"]
+    depends_on: [api]
+
+  bot:
+    build: ./apps/bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      WEBAPP_URL: http://localhost:5173
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/awr
+    depends_on: [db]
+
+volumes: { dbdata: {} }
