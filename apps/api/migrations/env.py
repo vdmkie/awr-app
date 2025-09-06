@@ -1,18 +1,20 @@
-
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+# Добавляем /app/src в PYTHONPATH
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from src.database import Base  # твои модели
+import src.models  # обязательно подтягиваем все модели
 
 # Alembic Config object
 config = context.config
 
 # Interpret the config file for Python logging.
-fileConfig(config.config_file_name)
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
 
 # Target metadata for autogenerate
 target_metadata = Base.metadata
