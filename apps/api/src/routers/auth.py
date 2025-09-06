@@ -60,11 +60,6 @@ async def token(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/me", response_model=UserOut)
-async def me(db: AsyncSession = Depends(get_session), form: OAuth2PasswordRequestForm | None = None, token: str | None = None):
-    # Simple endpoint if Authorization header set; else not used in this stub
-    return {"login": "me", "phone": None, "role": Role.admin, "id": 0, "crew_topic_id": None}
-
 @router.post("/tg_login", response_model=Token)
 async def tg_login(tg_id: str, db: AsyncSession = Depends(get_session)):
     res = await db.execute(select(User).where(User.tg_id == tg_id))
@@ -75,3 +70,8 @@ async def tg_login(tg_id: str, db: AsyncSession = Depends(get_session)):
     payload = {"sub": str(user.id), "exp": expire}
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
     return {"access_token": token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserOut | dict)
+async def me(token: str | None = None, db: AsyncSession = Depends(get_session)):
+    # Заглушка для простоты; фронт использует Authorization заголовок и /auth/me в main.py
+    return {"id": 0, "login": "me", "phone": None, "role": Role.admin, "crew_topic_id": None}

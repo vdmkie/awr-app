@@ -27,7 +27,6 @@ async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-# Simple /auth/me implementation using header
 @app.get("/api/v1/auth/me")
 async def auth_me(authorization: str | None = Header(default=None), db: AsyncSession = Depends(get_session)):
     if not authorization or not authorization.startswith("Bearer "):

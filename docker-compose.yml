@@ -13,8 +13,6 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/awr
       SECRET_KEY: supersecret
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      SUPERGROUP_CHAT_ID: ${SUPERGROUP_CHAT_ID:-}
     depends_on: [db]
     ports: ["8000:8000"]
 
