@@ -1,11 +1,24 @@
 fastapi==0.112.2
 uvicorn[standard]==0.30.6
+
+# ORM и база
 SQLAlchemy==2.0.36
 asyncpg==0.29.0
+
+# Авторизация и безопасность
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
+python-multipart==0.0.9
+
+# Pydantic + настройки
 pydantic==2.9.2
 pydantic-settings==2.5.2
-httpx==0.27.2
+
+# Миграции
 alembic==1.13.2
-python-multipart==0.0.9
+
+# HTTP-клиент (если вдруг нужен для интеграций)
+httpx==0.27.2
+
+# Утилиты
+python-dotenv==1.1.1
