@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Создать задачу - AWR{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-plus-circle me-2"></i>Создание новой задачи
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>Новая задача
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('new_task') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-geo-alt me-2"></i>Адрес *
+                                    </label>
+                                    <input type="text" class="form-control form-control-modern" 
+                                           name="address" required 
+                                           placeholder="Введите адрес объекта">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-building me-2"></i>Количество этажей *
+                                    </label>
+                                    <input type="number" class="form-control form-control-modern" 
+                                           name="floors" min="1" required 
+                                           placeholder="Этажи">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-door-open me-2"></i>Количество парадных *
+                                    </label>
+                                    <input type="number" class="form-control form-control-modern" 
+                                           name="entrances" min="1" required 
+                                           placeholder="Парадные">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-tools me-2"></i>Вид работ *
+                                    </label>
+                                    <select class="form-select form-control-modern" name="work_type" required>
+                                        <option value="">Выберите вид работ</option>
+                                        {% for work_type in work_types %}
+                                        <option value="{{ work_type }}">{{ work_type }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-people me-2"></i>Назначить бригаду
+                                    </label>
+                                    <select class="form-select form-control-modern" name="assigned_brigade">
+                                        <option value="">Не назначать (новая задача)</option>
+                                        {% for brigade in brigades %}
+                                        <option value="{{ brigade.name }}">{{ brigade.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if user.role == 'super_admin' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-person-badge me-2"></i>Назначить администратора
+                                    </label>
+                                    <select class="form-select form-control-modern" name="assigned_admin">
+                                        <option value="">Не назначать</option>
+                                        <option value="Администратор 1">Администратор 1</option>
+                                        <option value="Администратор 2">Администратор 2</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 d-flex align-items-end">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               id="urgentCheck" name="urgent">
+                                        <label class="form-check-label fw-bold text-danger" for="urgentCheck">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>Срочная задача
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-clipboard-data me-2"></i>Техническое задание *
+                            </label>
+                            <textarea class="form-control form-control-modern" 
+                                      name="description" rows="4" required
+                                      placeholder="Подробное описание работ, требования, особенности..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-key me-2"></i>Информация о доступе
+                            </label>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <textarea class="form-control form-control-modern" 
+                                              name="access_info" rows="3"
+                                              placeholder="Код домофона, контакты консьержа, особенности доступа..."></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted">Выбрать из сохраненных:</label>
+                                    <select class="form-select" id="savedAccessSelect" onchange="fillAccessInfo()">
+                                        <option value="">Выберите адрес</option>
+                                        {% for access in access_info %}
+                                        <option value="{{ access.address }}" data-info="{{ access.info }}">
+                                            {{ access.address }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 bg-light">
+                                    <h6 class="text-muted mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>Информация о задаче
+                                    </h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Создатель:</span>
+                                        <strong>{{ user.name }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Дата создания:</span>
+                                        <strong id="currentDate"></strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Начальный статус:</span>
+                                        <span class="badge bg-info">Новая задача</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 bg-light">
+                                    <h6 class="text-muted mb-3">
+                                        <i class="bi bi-lightbulb me-2"></i>Подсказки
+                                    </h6>
+                                    <ul class="list-unstyled mb-0 small">
+                                        <li class="mb-2">
+                                            <i class="bi bi-check-circle text-success me-2"></i>
+                                            Укажите точный адрес для корректного отображения на карте
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-check-circle text-success me-2"></i>
+                                            Заполните техническое задание максимально подробно
+                                        </li>
+                                        <li class="mb-0">
+                                            <i class="bi bi-check-circle text-success me-2"></i>
+                                            При назначении бригады задача сразу перейдет в работу
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary btn-modern" 
+                                            onclick="history.back()">
+                                        <i class="bi bi-arrow-left me-2"></i>Отмена
+                                    </button>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary btn-modern me-2" 
+                                                onclick="saveDraft()">
+                                            <i class="bi bi-save me-2"></i>Сохранить как черновик
+                                        </button>
+                                        <button type="submit" class="btn btn-primary-modern">
+                                            <i class="bi bi-plus-circle me-2"></i>Создать задачу
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Установить текущую дату
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    document.getElementById('currentDate').textContent = dateStr;
+});
+
+// Заполнение информации о доступе из сохраненных
+function fillAccessInfo() {
+    const select = document.getElementById('savedAccessSelect');
+    const textarea = document.querySelector('textarea[name="access_info"]');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (selectedOption.dataset.info) {
+        textarea.value = selectedOption.dataset.info;
+    }
+}
+
+// Сохранение черновика
+function saveDraft() {
+    const formData = new FormData(document.querySelector('form'));
+    const draftData = {};
+    
+    for (let [key, value] of formData.entries()) {
+        draftData[key] = value;
+    }
+    
+    // Сохранение в localStorage для демонстрации
+    localStorage.setItem('taskDraft', JSON.stringify(draftData));
+    
+    alert('Черновик сохранен');
+}
+
+// Загрузка черновика при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const draft = localStorage.getItem('taskDraft');
+    if (draft) {
+        const draftData = JSON.parse(draft);
+        
+        // Спросить пользователя о загрузке черновика
+        if (confirm('Найден сохраненный черновик. Загрузить его?')) {
+            for (let [key, value] of Object.entries(draftData)) {
+                const field = document.querySelector(`[name="${key}"]`);
+                if (field) {
+                    field.value = value;
+                    if (field.type === 'checkbox') {
+                        field.checked = value === 'on';
+                    }
+                }
+            }
+            
+            // Удалить черновик после загрузки
+            localStorage.removeItem('taskDraft');
+        }
+    }
+});
+
+// Валидация формы
+document.querySelector('form').addEventListener('submit', function(e) {
+    const address = document.querySelector('input[name="address"]').value.trim();
+    const floors = document.querySelector('input[name="floors"]').value;
+    const entrances = document.querySelector('input[name="entrances"]').value;
+    const workType = document.querySelector('select[name="work_type"]').value;
+    const description = document.querySelector('textarea[name="description"]').value.trim();
+    
+    if (!address || !floors || !entrances || !workType || !description) {
+        e.preventDefault();
+        alert('Пожалуйста, заполните все обязательные поля (отмеченные *)');
+        return;
+    }
+    
+    if (parseInt(floors) < 1 || parseInt(entrances) < 1) {
+        e.preventDefault();
+        alert('Количество этажей и парадных должно быть больше 0');
+        return;
+    }
+    
+    if (description.length < 10) {
+        e.preventDefault();
+        alert('Техническое задание должно содержать минимум 10 символов');
+        return;
+    }
+});
+
+// Автосохранение в процессе заполнения
+let autoSaveTimer;
+document.querySelectorAll('input, select, textarea').forEach(field => {
+    field.addEventListener('input', function() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => {
+            saveDraft();
+        }, 30000); // Автосохранение через 30 секунд бездействия
+    });
+});
+
+// Подсветка обязательных полей
+document.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+    field.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    field.addEventListener('input', function() {
+        if (this.value.trim()) {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+</script>
+
+<style>
+.form-control-modern:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+</style>
+{% endblock %}
