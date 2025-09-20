@@ -4,7 +4,7 @@ services:
     name: awr-management-app
     env: python
     plan: free  # Или 'starter' для продакшена
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python app.py
     healthCheckPath: /
     envVars:
@@ -16,6 +16,8 @@ services:
         value: 5000
       - key: PRODUCTION
         value: true
+      - key: PYTHON_VERSION
+        value: 3.11.9   # фиксируем Python, чтобы не тянул 3.13
       # Эти переменные нужно добавить вручную в Render Dashboard:
       # - BOT_TOKEN
       # - SUPER_GROUP_ID
@@ -24,11 +26,13 @@ services:
   - type: worker
     name: awr-telegram-bot
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python bot.py
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9   # то же самое для воркера
       # Эти переменные нужно добавить вручную в Render Dashboard:
       # - BOT_TOKEN
       # - SUPER_GROUP_ID
