@@ -1,0 +1,34 @@
+services:
+  # Основное веб-приложение
+  - type: web
+    name: awr-management-app
+    env: python
+    plan: free  # Или 'starter' для продакшена
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 5000
+      - key: PRODUCTION
+        value: true
+      # Эти переменные нужно добавить вручную в Render Dashboard:
+      # - BOT_TOKEN
+      # - SUPER_GROUP_ID
+
+  # Telegram бот (Background Worker)
+  - type: worker
+    name: awr-telegram-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      # Эти переменные нужно добавить вручную в Render Dashboard:
+      # - BOT_TOKEN
+      # - SUPER_GROUP_ID

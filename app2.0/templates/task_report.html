@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}Создать отчет - AWR{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-file-earmark-text me-2"></i>Создание отчета по задаче #{{ task.id }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Информация о задаче -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Информация о задаче
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr><td><strong>ID задачи:</strong></td><td>#{{ task.id }}</td></tr>
+                                <tr><td><strong>Адрес:</strong></td><td>{{ task.address }}</td></tr>
+                                <tr><td><strong>Вид работ:</strong></td><td>{{ task.work_type }}</td></tr>
+                                <tr><td><strong>Этажи/Парадные:</strong></td><td>{{ task.floors }}/{{ task.entrances }}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 bg-light h-100">
+                                <h6 class="text-muted mb-2">Техническое задание:</h6>
+                                <div class="small">{{ task.description or 'Нет описания' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма отчета -->
+    <form method="POST" action="{{ url_for('task_report', task_id=task.id) }}" enctype="multipart/form-data" id="reportForm">
+        <div class="row">
+            <!-- Часть 1: Комментарий -->
+            <div class="col-lg-6 mb-4">
+                <div class="card-modern h-100">
+                    <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-chat-text me-2"></i>1. Комментарий к выполненной работе
+                        </h6>
+                        <div class="form-check" id="commentCheck" style="display: none;">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Описание выполненных работ *</label>
+                            <textarea class="form-control" name="comment" id="commentText" rows="8" 
+                                      placeholder="Опишите подробно какие работы были выполнены, особенности, сложности..." 
+                                      required onblur="checkSection('comment')"></textarea>
+                            <div class="form-text">Минимум 20 символов</div>
+                        </div>
+                        
+                        <div class="progress mb-3">
+                            <div class="progress-bar" id="commentProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Часть 1 из 4</small>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="saveSection('comment')">
+                                <i class="bi bi-save me-1"></i>Сохранить часть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Часть 2: Доступ -->
+            <div class="col-lg-6 mb-4">
+                <div class="card-modern h-100">
+                    <div class="card-header bg-gradient-warning text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-key me-2"></i>2. Информация о доступе
+                        </h6>
+                        <div class="form-check" id="accessCheck" style="display: none;">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Как получали доступ к объекту *</label>
+                            <textarea class="form-control" name="access" id="accessText" rows="6" 
+                                      placeholder="Код домофона, контакты консьержа, особенности входа..." 
+                                      required onblur="checkSection('access')"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Время начала работ</label>
+                            <input type="time" class="form-control" id="startTime">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Время окончания работ</label>
+                            <input type="time" class="form-control" id="endTime">
+                        </div>
+                        
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-warning" id="accessProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Часть 2 из 4</small>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="saveSection('access')">
+                                <i class="bi bi-save me-1"></i>Сохранить часть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Часть 3: Фотографии -->
+            <div class="col-lg-6 mb-4">
+                <div class="card-modern h-100">
+                    <div class="card-header bg-gradient-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-camera me-2"></i>3. Фотографии (от 1 до 20)
+                        </h6>
+                        <div class="form-check" id="photosCheck" style="display: none;">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Загрузите фотографии работ *</label>
+                            <input type="file" class="form-control" name="photos" id="photosInput" 
+                                   multiple accept="image/*" onchange="handlePhotos()" required>
+                            <div class="form-text">Принимаются файлы: JPG, PNG, WEBP. Максимум 20 фото по 10MB.</div>
+                        </div>
+                        
+                        <div id="photoPreview" class="mb-3">
+                            <!-- Превью фотографий -->
+                        </div>
+                        
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" id="photosProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Часть 3 из 4</small>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="saveSection('photos')">
+                                <i class="bi bi-save me-1"></i>Сохранить часть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Часть 4: Материалы -->
+            <div class="col-lg-6 mb-4">
+                <div class="card-modern h-100">
+                    <div class="card-header bg-gradient-danger text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-box me-2"></i>4. Списание материалов
+                        </h6>
+                        <div class="form-check" id="materialsCheck" style="display: none;">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Использованные материалы *</label>
+                            <div id="materialsContainer">
+                                <div class="material-row mb-2">
+                                    <div class="row">
+                                        <div class="col-7">
+                                            <select class="form-select" name="material_name" required>
+                                                <option value="">Выберите материал</option>
+                                                {% for material, unit in materials.items() %}
+                                                <option value="{{ material }}" data-unit="{{ unit }}">{{ material }} ({{ unit }})</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control" name="material_quantity" 
+                                                   placeholder="Количество" min="0.1" step="0.1" required>
+                                        </div>
+                                        <div class="col-1">
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMaterialRow(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addMaterialRow()">
+                                <i class="bi bi-plus-circle me-1"></i>Добавить материал
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted">Мои материалы на руках:</h6>
+                            <div class="border rounded p-2 bg-light small">
+                                {% for material, quantity in user_materials.items() %}
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ material }}</span>
+                                    <span class="fw-bold">{{ quantity }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-danger" id="materialsProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Часть 4 из 4</small>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="saveSection('materials')">
+                                <i class="bi bi-save me-1"></i>Сохранить часть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Общий прогресс и отправка -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card-modern">
+                    <div class="card-body">
+                        <h6 class="mb-3">Общий прогресс отчета</h6>
+                        
+                        <div class="progress mb-4" style="height: 10px;">
+                            <div class="progress-bar bg-gradient-primary" id="totalProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-primary me-2 p-1" style="width: 20px; height: 20px;">
+                                        <i class="bi bi-1-circle text-white small"></i>
+                                    </div>
+                                    <span class="small" id="status1">Комментарий</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-warning me-2 p-1" style="width: 20px; height: 20px;">
+                                        <i class="bi bi-2-circle text-white small"></i>
+                                    </div>
+                                    <span class="small" id="status2">Доступ</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-success me-2 p-1" style="width: 20px; height: 20px;">
+                                        <i class="bi bi-3-circle text-white small"></i>
+                                    </div>
+                                    <span class="small" id="status3">Фотографии</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-danger me-2 p-1" style="width: 20px; height: 20px;">
+                                        <i class="bi bi-4-circle text-white small"></i>
+                                    </div>
+                                    <span class="small" id="status4">Материалы</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="bi bi-arrow-left me-2"></i>Отмена
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="saveDraft()">
+                                    <i class="bi bi-save me-2"></i>Сохранить черновик
+                                </button>
+                                <button type="submit" class="btn btn-success" id="submitBtn" disabled>
+                                    <i class="bi bi-check-circle me-2"></i>Отправить отчет
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let completedSections = {
+    comment: false,
+    access: false,
+    photos: false,
+    materials: false
+};
+
+// Проверка секций при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    updateProgress();
+    loadDraft();
+});
+
+function checkSection(sectionName) {
+    let isComplete = false;
+    
+    switch(sectionName) {
+        case 'comment':
+            const comment = document.getElementById('commentText').value.trim();
+            isComplete = comment.length >= 20;
+            break;
+        case 'access':
+            const access = document.getElementById('accessText').value.trim();
+            isComplete = access.length >= 10;
+            break;
+        case 'photos':
+            const photos = document.getElementById('photosInput').files;
+            isComplete = photos.length > 0 && photos.length <= 20;
+            break;
+        case 'materials':
+            const materials = document.querySelectorAll('select[name="material_name"]');
+            const quantities = document.querySelectorAll('input[name="material_quantity"]');
+            isComplete = materials.length > 0 && Array.from(materials).every((select, i) => 
+                select.value && quantities[i].value && parseFloat(quantities[i].value) > 0
+            );
+            break;
+    }
+    
+    completedSections[sectionName] = isComplete;
+    updateSectionIndicator(sectionName, isComplete);
+    updateProgress();
+}
+
+function updateSectionIndicator(sectionName, isComplete) {
+    const checkElement = document.getElementById(sectionName + 'Check');
+    const progressElement = document.getElementById(sectionName + 'Progress');
+    const statusElement = document.getElementById('status' + getSectionNumber(sectionName));
+    
+    if (isComplete) {
+        checkElement.style.display = 'block';
+        progressElement.style.width = '100%';
+        statusElement.innerHTML += ' <i class="bi bi-check-circle-fill text-success"></i>';
+    } else {
+        checkElement.style.display = 'none';
+        progressElement.style.width = '0%';
+        statusElement.innerHTML = statusElement.innerHTML.replace(/ <i class="bi bi-check-circle-fill text-success"><\/i>/, '');
+    }
+}
+
+function getSectionNumber(sectionName) {
+    const map = { comment: 1, access: 2, photos: 3, materials: 4 };
+    return map[sectionName];
+}
+
+function updateProgress() {
+    const completedCount = Object.values(completedSections).filter(Boolean).length;
+    const progressPercent = (completedCount / 4) * 100;
+    
+    document.getElementById('totalProgress').style.width = progressPercent + '%';
+    
+    // Активация кнопки отправки
+    const submitBtn = document.getElementById('submitBtn');
+    if (completedCount === 4) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-outline-success');
+        submitBtn.classList.add('btn-success');
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('btn-success');
+        submitBtn.classList.add('btn-outline-success');
+    }
+}
+
+function saveSection(sectionName) {
+    checkSection(sectionName);
+    
+    if (completedSections[sectionName]) {
+        alert(`Часть "${getSectionTitle(sectionName)}" сохранена успешно!`);
+        saveDraft();
+    } else {
+        alert(`Пожалуйста, заполните все обязательные поля в части "${getSectionTitle(sectionName)}"`);
+    }
+}
+
+function getSectionTitle(sectionName) {
+    const titles = {
+        comment: 'Комментарий',
+        access: 'Доступ',
+        photos: 'Фотографии',
+        materials: 'Материалы'
+    };
+    return titles[sectionName];
+}
+
+function handlePhotos() {
+    const input = document.getElementById('photosInput');
+    const preview = document.getElementById('photoPreview');
+    
+    preview.innerHTML = '';
+    
+    if (input.files.length > 20) {
+        alert('Максимум 20 фотографий');
+        input.value = '';
+        return;
+    }
+    
+    Array.from(input.files).forEach((file, index) => {
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+            alert(`Файл ${file.name} слишком большой (максимум 10MB)`);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-preview-item d-inline-block me-2 mb-2';
+            div.innerHTML = `
+                <div class="position-relative">
+                    <img src="${e.target.result}" alt="Preview ${index + 1}" 
+                         style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" 
+                            style="font-size: 10px; padding: 2px 6px;" onclick="removePhoto(${index})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    checkSection('photos');
+}
+
+function removePhoto(index) {
+    // В реальном приложении здесь будет удаление конкретного файла
+    alert(`Удаление фото ${index + 1} будет реализовано`);
+}
+
+function addMaterialRow() {
+    const container = document.getElementById('materialsContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'material-row mb-2';
+    newRow.innerHTML = `
+        <div class="row">
+            <div class="col-7">
+                <select class="form-select" name="material_name" required onchange="checkSection('materials')">
+                    <option value="">Выберите материал</option>
+                    {% for material, unit in materials.items() %}
+                    <option value="{{ material }}" data-unit="{{ unit }}">{{ material }} ({{ unit }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-4">
+                <input type="number" class="form-control" name="material_quantity" 
+                       placeholder="Количество" min="0.1" step="0.1" required 
+                       onchange="checkSection('materials')">
+            </div>
+            <div class="col-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeMaterialRow(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeMaterialRow(button) {
+    button.closest('.material-row').remove();
+    checkSection('materials');
+}
+
+function saveDraft() {
+    const formData = new FormData(document.getElementById('reportForm'));
+    const draftData = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (draftData[key]) {
+            if (Array.isArray(draftData[key])) {
+                draftData[key].push(value);
+            } else {
+                draftData[key] = [draftData[key], value];
+            }
+        } else {
+            draftData[key] = value;
+        }
+    }
+    
+    // Сохранение в localStorage
+    localStorage.setItem(`reportDraft_{{ task.id }}`, JSON.stringify(draftData));
+    
+    // Показать уведомление
+    showNotification('Черновик сохранен', 'success');
+}
+
+function loadDraft() {
+    const draftData = localStorage.getItem(`reportDraft_{{ task.id }}`);
+    if (draftData && confirm('Найден сохраненный черновик. Загрузить его?')) {
+        const draft = JSON.parse(draftData);
+        
+        // Заполнение полей
+        if (draft.comment) document.getElementById('commentText').value = draft.comment;
+        if (draft.access) document.getElementById('accessText').value = draft.access;
+        
+        // Проверка секций после загрузки
+        setTimeout(() => {
+            checkSection('comment');
+            checkSection('access');
+            checkSection('materials');
+        }, 100);
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Проверка всех секций при отправке формы
+document.getElementById('reportForm').addEventListener('submit', function(e) {
+    Object.keys(completedSections).forEach(checkSection);
+    
+    const allComplete = Object.values(completedSections).every(Boolean);
+    
+    if (!allComplete) {
+        e.preventDefault();
+        alert('Пожалуйста, заполните все 4 части отчета перед отправкой');
+        return;
+    }
+    
+    // Очистить черновик после успешной отправки
+    localStorage.removeItem(`reportDraft_{{ task.id }}`);
+    
+    showNotification('Отчет отправляется...', 'info');
+});
+
+// Автосохранение черновика каждые 30 секунд
+setInterval(saveDraft, 30000);
+
+// Добавление обработчиков для всех полей
+document.getElementById('commentText').addEventListener('input', () => checkSection('comment'));
+document.getElementById('accessText').addEventListener('input', () => checkSection('access'));
+
+// Инициализация проверки материалов
+document.querySelectorAll('select[name="material_name"], input[name="material_quantity"]').forEach(element => {
+    element.addEventListener('change', () => checkSection('materials'));
+});
+</script>
+
+<style>
+.photo-preview-item img {
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.photo-preview-item:hover img {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.material-row {
+    border-left: 3px solid transparent;
+    padding-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.material-row:hover {
+    border-left-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.progress {
+    height: 8px;
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+}
+
+.card-modern .card-header {
+    border-bottom: none;
+}
+
+.alert {
+    max-width: 300px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+</style>
+{% endblock %}

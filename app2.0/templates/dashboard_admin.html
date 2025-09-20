@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Администратор - AWR{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-shield-check me-2"></i>Панель Администратора
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('dashboard') }}">
+        <i class="bi bi-speedometer2"></i>Главная
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('my_tasks') }}">
+        <i class="bi bi-person-check"></i>Мои задачи
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('new_task') }}">
+        <i class="bi bi-plus-circle"></i>Новая задача
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('task_list') }}">
+        <i class="bi bi-list-check"></i>Список задач
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="showSection('edit-tasks')">
+        <i class="bi bi-pencil-square"></i>Редактор задач
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('reports') }}">
+        <i class="bi bi-file-earmark-text"></i>Отчёты
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('materials') }}">
+        <i class="bi bi-box-seam"></i>Материалы
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="showSection('access-info')">
+        <i class="bi bi-key"></i>Доступ инфо
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="#" onclick="showSection('acceptance')">
+        <i class="bi bi-check2-square"></i>Приемка
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('map_view') }}">
+        <i class="bi bi-geo-alt"></i>Карта
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('brigades_list') }}">
+        <i class="bi bi-people"></i>Список бригад
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Статистические карточки -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card-modern">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Мои задачи</h6>
+                            <h3 class="mb-0 text-primary" id="myTasks">-</h3>
+                        </div>
+                        <div class="rounded-circle bg-primary bg-gradient p-3">
+                            <i class="bi bi-person-check text-white fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card-modern">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Задач бригадам</h6>
+                            <h3 class="mb-0 text-warning" id="brigadesTasks">-</h3>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-gradient p-3">
+                            <i class="bi bi-people text-white fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card-modern">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Выполнено</h6>
+                            <h3 class="mb-0 text-success" id="completedTasks">-</h3>
+                        </div>
+                        <div class="rounded-circle bg-success bg-gradient p-3">
+                            <i class="bi bi-check-circle text-white fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card-modern">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Активных бригад</h6>
+                            <h3 class="mb-0 text-info" id="activeBrigades">-</h3>
+                        </div>
+                        <div class="rounded-circle bg-info bg-gradient p-3">
+                            <i class="bi bi-people text-white fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2"></i>Быстрые действия
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-primary-modern w-100" onclick="location.href='{{ url_for('my_tasks') }}'">
+                                <i class="bi bi-person-check me-2"></i>
+                                Мои задачи
+                            </button>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-outline-primary w-100" onclick="location.href='{{ url_for('new_task') }}'">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Создать задачу
+                            </button>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-outline-success w-100" onclick="showUrgentTasks()">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Срочные задачи
+                            </button>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="location.href='{{ url_for('reports') }}'">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                Отчеты
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мои задачи от супер-админа -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-warning text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check me-2"></i>Мои задачи от супер-админа
+                    </h5>
+                    <button class="btn btn-light btn-sm" onclick="location.href='{{ url_for('my_tasks') }}'">
+                        Все задачи
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="adminTasks" class="table-responsive">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-warning" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Мои бригады
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="myBrigades">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Задачи бригадам и отчеты -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>Задачи бригадам
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="brigadeTasksList">
+                        <!-- Динамически загружаемые задачи бригадам -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2"></i>Последние отчеты
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentReports">
+                        <!-- Динамически загружаемые отчеты -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для отчета по задаче -->
+<div class="modal fade" id="taskReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отчет по задаче</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="taskReportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea class="form-control" rows="3" id="reportComment" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус выполнения</label>
+                        <select class="form-select" id="reportStatus" required>
+                            <option value="">Выберите статус</option>
+                            <option value="Выполнено">Выполнено</option>
+                            <option value="В работе">В работе</option>
+                            <option value="Отложено">Отложено</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitTaskReport()">Сохранить отчет</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Загрузка данных при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadAdminDashboard();
+    loadAdminTasks();
+    loadMyBrigades();
+    loadBrigadeTasksList();
+    loadRecentReports();
+});
+
+function loadAdminDashboard() {
+    const adminName = '{{ user.name }}';
+    
+    fetch('/api/tasks')
+        .then(response => response.json())
+        .then(tasks => {
+            const myTasks = tasks.filter(t => t.assigned_admin === adminName);
+            const brigadesTasks = tasks.filter(t => t.assigned_brigade && !t.assigned_admin);
+            const completedTasks = tasks.filter(t => t.status === 'Выполнено').length;
+            
+            document.getElementById('myTasks').textContent = myTasks.length;
+            document.getElementById('brigadesTasks').textContent = brigadesTasks.length;
+            document.getElementById('completedTasks').textContent = completedTasks;
+        })
+        .catch(error => console.error('Ошибка загрузки данных:', error));
+}
+
+function loadAdminTasks() {
+    const adminName = '{{ user.name }}';
+    
+    fetch('/api/tasks')
+        .then(response => response.json())
+        .then(tasks => {
+            const adminTasks = tasks.filter(t => t.assigned_admin === adminName).slice(0, 5);
+            let html = '';
+            
+            if (adminTasks.length === 0) {
+                html = '<p class="text-muted text-center">Нет назначенных задач</p>';
+            } else {
+                html = '<table class="table table-hover"><thead><tr><th>Адрес</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead><tbody>';
+                
+                adminTasks.forEach(task => {
+                    const statusClass = getStatusClass(task.status);
+                    const date = task.created_date ? new Date(task.created_date).toLocaleDateString() : '-';
+                    
+                    html += `
+                        <tr>
+                            <td>${task.address}</td>
+                            <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openTaskReport(${task.id})">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+            }
+            
+            document.getElementById('adminTasks').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('adminTasks').innerHTML = '<p class="text-muted">Ошибка загрузки данных</p>';
+        });
+}
+
+function loadMyBrigades() {
+    // Симуляция загрузки бригад под управлением админа
+    const brigades = [
+        { name: 'Бригада 1', tasks: 3, status: 'active' },
+        { name: 'Бригада 2', tasks: 5, status: 'active' },
+        { name: 'Бригада 3', tasks: 1, status: 'inactive' },
+        { name: 'Бригада 4', tasks: 2, status: 'active' }
+    ];
+    
+    let html = '';
+    let activeBrigades = 0;
+    
+    brigades.forEach(brigade => {
+        const statusIcon = brigade.status === 'active' ? 'bi-circle-fill text-success' : 'bi-circle text-muted';
+        if (brigade.status === 'active') activeBrigades++;
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.05);">
+                <div class="d-flex align-items-center">
+                    <i class="bi ${statusIcon} me-2"></i>
+                    <span>${brigade.name}</span>
+                </div>
+                <span class="badge bg-primary">${brigade.tasks}</span>
+            </div>
+        `;
+    });
+    
+    document.getElementById('myBrigades').innerHTML = html;
+    document.getElementById('activeBrigades').textContent = activeBrigades;
+}
+
+function loadBrigadeTasksList() {
+    fetch('/api/tasks')
+        .then(response => response.json())
+        .then(tasks => {
+            const brigadeTasks = tasks.filter(t => t.assigned_brigade && !t.assigned_admin).slice(0, 5);
+            let html = '';
+            
+            if (brigadeTasks.length === 0) {
+                html = '<p class="text-muted text-center">Нет задач для бригад</p>';
+            } else {
+                brigadeTasks.forEach(task => {
+                    const statusClass = getStatusClass(task.status);
+                    html += `
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${task.address}</strong>
+                                    <br>
+                                    <small class="text-muted">${task.assigned_brigade}</small>
+                                </div>
+                                <span class="status-badge ${statusClass}">${task.status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('brigadeTasksList').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('brigadeTasksList').innerHTML = '<p class="text-muted">Ошибка загрузки данных</p>';
+        });
+}
+
+function loadRecentReports() {
+    // Симуляция загрузки последних отчетов
+    const reports = [
+        { brigade: 'Бригада 1', address: 'ул. Ленина, 15', date: '2025-01-20', status: 'Выполнено' },
+        { brigade: 'Бригада 2', address: 'пр. Мира, 8', date: '2025-01-19', status: 'В работе' },
+        { brigade: 'Бригада 1', address: 'ул. Победы, 3', date: '2025-01-18', status: 'Выполнено' }
+    ];
+    
+    let html = '';
+    reports.forEach(report => {
+        const statusClass = getStatusClass(report.status);
+        html += `
+            <div class="border-bottom pb-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${report.address}</strong>
+                        <br>
+                        <small class="text-muted">${report.brigade} • ${report.date}</small>
+                    </div>
+                    <span class="status-badge ${statusClass}">${report.status}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('recentReports').innerHTML = html;
+}
+
+function getStatusClass(status) {
+    switch(status) {
+        case 'Новая задача': return 'status-new';
+        case 'В работе': return 'status-progress';
+        case 'Выполнено': return 'status-completed';
+        case 'Отложено': return 'status-postponed';
+        case 'Проблемный дом': return 'status-problem';
+        default: return 'status-new';
+    }
+}
+
+function showUrgentTasks() {
+    location.href = '/task_list?urgent=1';
+}
+
+function openTaskReport(taskId) {
+    // Открытие модального окна для отчета по задаче
+    const modal = new bootstrap.Modal(document.getElementById('taskReportModal'));
+    modal.show();
+    
+    // Сохранение ID задачи для последующего использования
+    document.getElementById('taskReportModal').dataset.taskId = taskId;
+}
+
+function submitTaskReport() {
+    const taskId = document.getElementById('taskReportModal').dataset.taskId;
+    const comment = document.getElementById('reportComment').value;
+    const status = document.getElementById('reportStatus').value;
+    
+    if (!comment || !status) {
+        alert('Пожалуйста, заполните все поля');
+        return;
+    }
+    
+    // Здесь будет реализован API вызов для отправки отчета
+    alert('Отчет сохранен');
+    
+    // Закрыть модальное окно
+    const modal = bootstrap.Modal.getInstance(document.getElementById('taskReportModal'));
+    modal.hide();
+    
+    // Обновить данные
+    loadAdminTasks();
+}
+
+// Обновление данных каждые 30 секунд
+setInterval(loadAdminDashboard, 30000);
+</script>
+{% endblock %}

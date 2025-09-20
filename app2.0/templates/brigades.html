@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}Управление бригадами - AWR{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-people me-2"></i>Управление бригадами
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Панель управления -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>Управление бригадами
+                    </h6>
+                    <button class="btn btn-light btn-sm" onclick="showAddBrigadeModal()">
+                        <i class="bi bi-plus-circle me-2"></i>Добавить бригаду
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Фильтр по статусу</label>
+                            <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                                <option value="">Все статусы</option>
+                                {% for status in statuses %}
+                                <option value="{{ status }}">{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Поиск по названию</label>
+                            <input type="text" class="form-control" id="searchInput" 
+                                   placeholder="Введите название бригады" onkeyup="applyFilters()">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-outline-success" onclick="exportBrigades()">
+                                <i class="bi bi-download me-2"></i>Экспорт списка
+                            </button>
+                            <span class="badge bg-info ms-3" id="brigadeCount">{{ brigades|length }} бригад</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список бригад -->
+    <div class="row" id="brigadesContainer">
+        {% for brigade in brigades %}
+        <div class="col-lg-4 col-md-6 mb-4 brigade-card" 
+             data-status="{{ brigade.status }}" 
+             data-name="{{ brigade.name|lower }}">
+            <div class="card-modern h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="card-title mb-0">{{ brigade.name }}</h6>
+                        <span class="status-badge status-{{ brigade.status|replace(' ', '-') }}">
+                            {{ brigade.status }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Телефон:</span>
+                            <span class="small">{{ brigade.phone }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Логин:</span>
+                            <span class="small font-monospace">{{ brigade.login }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">ID:</span>
+                            <span class="small text-muted">{{ brigade.id }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Статистика бригады -->
+                    <div class="border-top pt-3 mb-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="small text-muted">Активные</div>
+                                <div class="fw-bold text-warning" id="activeTasks_{{ brigade.id }}">-</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Выполнено</div>
+                                <div class="fw-bold text-success" id="completedTasks_{{ brigade.id }}">-</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Материалы</div>
+                                <div class="fw-bold text-info" id="materials_{{ brigade.id }}">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="editBrigade('{{ brigade.id }}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" 
+                                    onclick="viewBrigadeDetails('{{ brigade.id }}')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" 
+                                    onclick="changeBrigadeStatus('{{ brigade.id }}')">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="deleteBrigade('{{ brigade.id }}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Модальное окно добавления бригады -->
+<div class="modal fade" id="addBrigadeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить новую бригаду</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addBrigadeForm">
+                    <div class="mb-3">
+                        <label class="form-label">Название бригады *</label>
+                        <input type="text" class="form-control" id="newBrigadeName" required 
+                               placeholder="Например: Бригада 11">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Номер телефона *</label>
+                        <input type="tel" class="form-control" id="newBrigadePhone" required 
+                               placeholder="79161234567" pattern="[0-9]{11}">
+                        <div class="form-text">Введите номер без знака + (11 цифр)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Логин для входа *</label>
+                        <input type="text" class="form-control" id="newBrigadeLogin" required 
+                               placeholder="brigade11" pattern="[a-zA-Z0-9]+">
+                        <div class="form-text">Только латинские буквы и цифры</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пароль *</label>
+                        <input type="password" class="form-control" id="newBrigadePassword" required 
+                               minlength="6" placeholder="Минимум 6 символов">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select class="form-select" id="newBrigadeStatus">
+                            {% for status in statuses %}
+                            <option value="{{ status }}" {% if status == 'в работе' %}selected{% endif %}>
+                                {{ status }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="addBrigade()">
+                    <i class="bi bi-plus-circle me-2"></i>Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования бригады -->
+<div class="modal fade" id="editBrigadeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать бригаду</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBrigadeForm">
+                    <input type="hidden" id="editBrigadeId">
+                    <div class="mb-3">
+                        <label class="form-label">Название бригады *</label>
+                        <input type="text" class="form-control" id="editBrigadeName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Номер телефона *</label>
+                        <input type="tel" class="form-control" id="editBrigadePhone" required 
+                               pattern="[0-9]{11}">
+                        <div class="form-text">Введите номер без знака + (11 цифр)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Логин для входа *</label>
+                        <input type="text" class="form-control" id="editBrigadeLogin" required 
+                               pattern="[a-zA-Z0-9]+">
+                        <div class="form-text">Только латинские буквы и цифры</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Новый пароль</label>
+                        <input type="password" class="form-control" id="editBrigadePassword" 
+                               minlength="6" placeholder="Оставьте пустым, чтобы не менять">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select class="form-select" id="editBrigadeStatus">
+                            {% for status in statuses %}
+                            <option value="{{ status }}">{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="updateBrigade()">
+                    <i class="bi bi-check-circle me-2"></i>Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно деталей бригады -->
+<div class="modal fade" id="brigadeDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Детали бригады</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="brigadeDetailContent">
+                <!-- Содержимое будет загружено динамически -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="editFromDetailBtn">
+                    <i class="bi bi-pencil me-2"></i>Редактировать
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allBrigades = {{ brigades | tojsonfilter | safe }};
+
+// Загрузка статистики бригад при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadBrigadeStatistics();
+});
+
+function loadBrigadeStatistics() {
+    // Загрузка статистики для каждой бригады
+    allBrigades.forEach(brigade => {
+        // Симуляция данных - в реальном приложении это будет API вызов
+        const stats = {
+            active: Math.floor(Math.random() * 5),
+            completed: Math.floor(Math.random() * 20) + 5,
+            materials: Math.floor(Math.random() * 10) + 2
+        };
+        
+        const activeEl = document.getElementById(`activeTasks_${brigade.id}`);
+        const completedEl = document.getElementById(`completedTasks_${brigade.id}`);
+        const materialsEl = document.getElementById(`materials_${brigade.id}`);
+        
+        if (activeEl) activeEl.textContent = stats.active;
+        if (completedEl) completedEl.textContent = stats.completed;
+        if (materialsEl) materialsEl.textContent = stats.materials;
+    });
+}
+
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchFilter = document.getElementById('searchInput').value.toLowerCase();
+    
+    const cards = document.querySelectorAll('.brigade-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const status = card.dataset.status.toLowerCase();
+        const name = card.dataset.name;
+        
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesSearch = !searchFilter || name.includes(searchFilter);
+        
+        if (matchesStatus && matchesSearch) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('brigadeCount').textContent = `${visibleCount} бригад`;
+}
+
+function showAddBrigadeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addBrigadeModal'));
+    
+    // Очистить форму
+    document.getElementById('addBrigadeForm').reset();
+    
+    modal.show();
+}
+
+function addBrigade() {
+    const form = document.getElementById('addBrigadeForm');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const brigadeData = {
+        name: document.getElementById('newBrigadeName').value,
+        phone: document.getElementById('newBrigadePhone').value,
+        login: document.getElementById('newBrigadeLogin').value,
+        password: document.getElementById('newBrigadePassword').value,
+        status: document.getElementById('newBrigadeStatus').value
+    };
+    
+    // Проверка уникальности логина и телефона
+    const existingLogin = allBrigades.find(b => b.login === brigadeData.login);
+    const existingPhone = allBrigades.find(b => b.phone === brigadeData.phone);
+    
+    if (existingLogin) {
+        alert('Логин уже используется другой бригадой');
+        return;
+    }
+    
+    if (existingPhone) {
+        alert('Номер телефона уже используется другой бригадой');
+        return;
+    }
+    
+    // В реальном приложении здесь будет API вызов
+    console.log('Добавление новой бригады:', brigadeData);
+    alert('Бригада успешно добавлена! (В реальном приложении будет API вызов)');
+    
+    // Закрыть модальное окно
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addBrigadeModal'));
+    modal.hide();
+    
+    // Обновить список бригад
+    location.reload();
+}
+
+function editBrigade(brigadeId) {
+    const brigade = allBrigades.find(b => b.id === brigadeId);
+    if (!brigade) return;
+    
+    // Заполнить форму данными бригады
+    document.getElementById('editBrigadeId').value = brigade.id;
+    document.getElementById('editBrigadeName').value = brigade.name;
+    document.getElementById('editBrigadePhone').value = brigade.phone;
+    document.getElementById('editBrigadeLogin').value = brigade.login;
+    document.getElementById('editBrigadePassword').value = '';
+    document.getElementById('editBrigadeStatus').value = brigade.status;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editBrigadeModal'));
+    modal.show();
+}
+
+function updateBrigade() {
+    const form = document.getElementById('editBrigadeForm');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const brigadeId = document.getElementById('editBrigadeId').value;
+    const brigadeData = {
+        id: brigadeId,
+        name: document.getElementById('editBrigadeName').value,
+        phone: document.getElementById('editBrigadePhone').value,
+        login: document.getElementById('editBrigadeLogin').value,
+        status: document.getElementById('editBrigadeStatus').value
+    };
+    
+    const newPassword = document.getElementById('editBrigadePassword').value;
+    if (newPassword) {
+        brigadeData.password = newPassword;
+    }
+    
+    // Проверка уникальности логина и телефона (кроме текущей бригады)
+    const existingLogin = allBrigades.find(b => b.login === brigadeData.login && b.id !== brigadeId);
+    const existingPhone = allBrigades.find(b => b.phone === brigadeData.phone && b.id !== brigadeId);
+    
+    if (existingLogin) {
+        alert('Логин уже используется другой бригадой');
+        return;
+    }
+    
+    if (existingPhone) {
+        alert('Номер телефона уже используется другой бригадой');
+        return;
+    }
+    
+    // В реальном приложении здесь будет API вызов
+    console.log('Обновление бригады:', brigadeData);
+    alert('Данные бригады успешно обновлены! (В реальном приложении будет API вызов)');
+    
+    // Закрыть модальное окно
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editBrigadeModal'));
+    modal.hide();
+    
+    // Обновить список бригад
+    location.reload();
+}
+
+function viewBrigadeDetails(brigadeId) {
+    const brigade = allBrigades.find(b => b.id === brigadeId);
+    if (!brigade) return;
+    
+    const content = document.getElementById('brigadeDetailContent');
+    
+    // Симуляция дополнительной статистики
+    const detailedStats = {
+        totalTasks: Math.floor(Math.random() * 50) + 20,
+        avgCompletionTime: (Math.random() * 3 + 1).toFixed(1),
+        materialsUsed: Math.floor(Math.random() * 100) + 50,
+        lastActivity: '2 часа назад',
+        joinDate: '2024-01-15'
+    };
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3">Основная информация</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>ID:</strong></td><td>${brigade.id}</td></tr>
+                    <tr><td><strong>Название:</strong></td><td>${brigade.name}</td></tr>
+                    <tr><td><strong>Телефон:</strong></td><td>${brigade.phone}</td></tr>
+                    <tr><td><strong>Логин:</strong></td><td class="font-monospace">${brigade.login}</td></tr>
+                    <tr><td><strong>Статус:</strong></td><td><span class="status-badge status-${brigade.status.replace(' ', '-')}">${brigade.status}</span></td></tr>
+                    <tr><td><strong>Дата добавления:</strong></td><td>${detailedStats.joinDate}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary mb-3">Статистика работы</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Всего задач:</strong></td><td>${detailedStats.totalTasks}</td></tr>
+                    <tr><td><strong>Среднее время:</strong></td><td>${detailedStats.avgCompletionTime} дня</td></tr>
+                    <tr><td><strong>Использовано материалов:</strong></td><td>${detailedStats.materialsUsed} ед.</td></tr>
+                    <tr><td><strong>Последняя активность:</strong></td><td>${detailedStats.lastActivity}</td></tr>
+                    <tr><td><strong>Рейтинг:</strong></td><td>
+                        <div class="d-flex align-items-center">
+                            <div class="me-2">
+                                ${'★'.repeat(4)}${'☆'.repeat(1)}
+                            </div>
+                            <small class="text-muted">4.2/5</small>
+                        </div>
+                    </td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h6 class="text-primary mb-3">График активности (последние 7 дней)</h6>
+                <div class="d-flex justify-content-between align-items-end bg-light rounded p-3" style="height: 120px;">
+                    ${generateActivityChart()}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Настроить кнопку редактирования
+    document.getElementById('editFromDetailBtn').onclick = () => {
+        bootstrap.Modal.getInstance(document.getElementById('brigadeDetailModal')).hide();
+        setTimeout(() => editBrigade(brigadeId), 300);
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('brigadeDetailModal'));
+    modal.show();
+}
+
+function generateActivityChart() {
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+        const height = Math.floor(Math.random() * 80) + 20;
+        const day = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][i];
+        html += `
+            <div class="d-flex flex-column align-items-center">
+                <div class="bg-primary" style="width: 20px; height: ${height}px; margin-bottom: 5px;"></div>
+                <small class="text-muted">${day}</small>
+            </div>
+        `;
+    }
+    return html;
+}
+
+function changeBrigadeStatus(brigadeId) {
+    const brigade = allBrigades.find(b => b.id === brigadeId);
+    if (!brigade) return;
+    
+    const statuses = {{ statuses | tojsonfilter | safe }};
+    const currentIndex = statuses.indexOf(brigade.status);
+    const nextIndex = (currentIndex + 1) % statuses.length;
+    const newStatus = statuses[nextIndex];
+    
+    if (confirm(`Изменить статус бригады "${brigade.name}" на "${newStatus}"?`)) {
+        // В реальном приложении здесь будет API вызов
+        console.log(`Изменение статуса бригады ${brigadeId} на ${newStatus}`);
+        alert(`Статус изменен на "${newStatus}"`);
+        location.reload();
+    }
+}
+
+function deleteBrigade(brigadeId) {
+    const brigade = allBrigades.find(b => b.id === brigadeId);
+    if (!brigade) return;
+    
+    const confirmText = `Вы уверены, что хотите удалить бригаду "${brigade.name}"?\n\nЭто действие нельзя отменить!`;
+    
+    if (confirm(confirmText)) {
+        const finalConfirm = prompt(`Для подтверждения введите название бригады: "${brigade.name}"`);
+        
+        if (finalConfirm === brigade.name) {
+            // В реальном приложении здесь будет API вызов
+            console.log(`Удаление бригады ${brigadeId}`);
+            alert('Бригада удалена');
+            location.reload();
+        } else {
+            alert('Название введено неверно. Удаление отменено.');
+        }
+    }
+}
+
+function exportBrigades() {
+    // В реальном приложении здесь будет экспорт в Excel
+    alert('Экспорт списка бригад в Excel будет реализован');
+}
+
+// Обновление статистики каждые 30 секунд
+setInterval(loadBrigadeStatistics, 30000);
+</script>
+
+<style>
+.status-в-работе { background: #fef3c7; color: #92400e; }
+.status-на-больничном { background: #fee2e2; color: #991b1b; }
+.status-в-командировке { background: #dbeafe; color: #1e40af; }
+.status-в-отпуске { background: #d1fae5; color: #065f46; }
+.status-увольняются { background: #fce7f3; color: #be185d; }
+
+.brigade-card {
+    transition: all 0.3s ease;
+}
+
+.brigade-card:hover {
+    transform: translateY(-2px);
+}
+
+.font-monospace {
+    font-family: 'Courier New', monospace;
+    background: rgba(0,0,0,0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
